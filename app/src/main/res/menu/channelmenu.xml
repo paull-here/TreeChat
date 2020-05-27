@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.example.treechat.ChannelListActivity">
+
+    <item
+        android:id="@+id/logoutButton"
+        android:title="Logout"
+        app:showAsAction="collapseActionView"/>
+
+    <item
+        android:id="@+id/item2"
+        android:title="Item 2"
+        app:showAsAction="collapseActionView"/>
+
+
+</menu>
