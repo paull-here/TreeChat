@@ -51,7 +51,7 @@ class SignInActivity : AppCompatActivity() {
     private lateinit var mGoogleSignInClient: GoogleSignInClient
     val RC_SIGN_IN: Int = 1
     lateinit var mGoogleSignInOptions: GoogleSignInOptions
-    lateinit var mAuth : FirebaseAuth
+    private lateinit var mAuth : FirebaseAuth
 //    private lateinit var sharedPref: SharedPreferences
 
 
