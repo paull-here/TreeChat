@@ -15,7 +15,7 @@ import kotlinx.android.synthetic.main.activity_channel_list.*
 import java.lang.Math.abs
 
 class ChannelActivity : AppCompatActivity() {
-    var channelname = ""
+    var channelname: String=""
     var description: String=""
     private var members: MutableList<String> = ArrayList<String>()
     private var messages: MutableList<String> = ArrayList<String>()
@@ -31,12 +31,15 @@ class ChannelActivity : AppCompatActivity() {
         Log.d("chan_name", channelname.toString())
         channeltitle2.text = channelname
 
+        // Retrieve data in channel node
         val fb = FirebaseDatabase.getInstance().reference
         Log.d("p2", "in db.reference")
-        val channels7 = fb.child("channel")
-        Log.d("p3", "in child channel: " + channels7.toString())
-        val channeltree = channels7.orderByChild("name").equalTo(channelname)
+        val listOfChannels = fb.child("channel")
+        Log.d("p3", "in child channel: " + listOfChannels.toString())
+        val channeltree = listOfChannels.orderByChild("name").equalTo(channelname)
 
+        // This event listener is meant to keep listening to query or database reference it is
+        // attached to
         channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 // do something with data
@@ -62,22 +65,12 @@ class ChannelActivity : AppCompatActivity() {
         val channelinfo = data.getValue(Channel::class.java)!!
 
         description = channelinfo.description
-
-        if (channelinfo.members != members){
-            members = channelinfo.members
-            setupMembers()
-//            val size = channelinfo.members.size
-//            val current_size = members.size
-//            val len = abs(size - current_size)
-//
-//            for (i in 1..len) {
-//                chann
-//            }
-        }
-
-//        if (channelinfo.messages)
         members = channelinfo.members
+        setupMembers()
+
+        //TODO: retrieve data from message section in tree, not in the same place as channelinfo
         messages = channelinfo.messages
+        setupMessages()
     }
 
     fun setupMessages() {

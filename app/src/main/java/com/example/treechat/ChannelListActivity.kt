@@ -24,7 +24,6 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import com.google.firebase.database.FirebaseDatabase
 
-
 class ChannelListActivity : AppCompatActivity() {
 
     lateinit var mAuth : FirebaseAuth
@@ -43,7 +42,9 @@ class ChannelListActivity : AppCompatActivity() {
             //TODO: Figure out how to go from an onclicklistener by index to starting channel
             val myIntent = Intent(this, ChannelActivity::class.java)
             myIntent.putExtra("chan_name", channelList[index])
+            Log.d("toChannel1", "Clicked channel from channel list, moving to ChannelActivity")
             startActivity(myIntent)
+            Log.d("toChannel2", "Clicked channel from channel list, moving to ChannelActivity")
         }
     }
 
