@@ -6,10 +6,7 @@ import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_channel.*
 import kotlinx.android.synthetic.main.activity_channel_list.*
 import java.lang.Math.abs
@@ -18,7 +15,10 @@ class ChannelActivity : AppCompatActivity() {
     var channelname: String=""
     var description: String=""
     private var members: MutableList<String> = ArrayList<String>()
-    private var messages: MutableList<String> = ArrayList<String>()
+    private var messageIDs: MutableList<String> = ArrayList<String>()
+    private var messagelist: MutableList<String> = ArrayList<String>()
+    private var messagemap: HashMap<String, HashMap<String, String>> = HashMap<String, HashMap<String, String>>()
+    private var typeindicator = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
     private lateinit var myAdapter1 : ArrayAdapter<String>
     private lateinit var myAdapter2 : ArrayAdapter<String>
 
@@ -69,14 +69,73 @@ class ChannelActivity : AppCompatActivity() {
         setupMembers()
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo
-        messages = channelinfo.messages
-        setupMessages()
+        messageIDs = channelinfo.messages
+        Log.d("messageids", messageIDs.toString())
+        val fb = FirebaseDatabase.getInstance().reference
+        val messagetree = fb.child("message").orderByKey()
+        messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
+            override fun onDataChange(data: DataSnapshot) {
+                setupMessages(data)
+                }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // report/log the error
+            }
+        })
+//        setupMessages()
     }
 
-    fun setupMessages() {
-        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messages)
+    fun setupMessages(data: DataSnapshot) {
+        messagemap = data.getValue(typeindicator)!!
+        Log.d("messagemap", messagemap.toString())
+        for (ID in messageIDs) {
+            Log.d("currID", ID.toString())
+            val from = messagemap[ID]!!["from"]
+            Log.d("from", from.toString())
+            val text = messagemap[ID]!!["text"]
+            Log.d("text", text.toString())
+            val timestamp = messagemap[ID]!!["timestamp"]
+            Log.d("timestamp", timestamp.toString())
+            messagelist.add("$from: $text - $timestamp")
+
+
+        }
+        Log.d("messagelist", messagelist.toString())
+        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
         channelchat.adapter = myAdapter1
         myAdapter1.notifyDataSetChanged()
+//        val fb = FirebaseDatabase.getInstance().reference
+//        var typeindicator = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
+//        val messagetree = fb.child("message").orderByKey()
+//        messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
+//            override fun onDataChange(data: DataSnapshot) {
+//                messagemap = data.getValue(typeindicator)!!
+//                Log.d("messagemap", messagemap.toString())
+//                for (ID in messageIDs) {
+//                    Log.d("currID", ID.toString())
+//                    val from = messagemap[ID]!!["from"]
+//                    Log.d("from", from.toString())
+//                    val text = messagemap[ID]!!["text"]
+//                    Log.d("text", text.toString())
+//                    val timestamp = messagemap[ID]!!["timestamp"]
+//                    Log.d("timestamp", timestamp.toString())
+//                    messagelist.add("$from: $text - $timestamp")
+//
+//                    Log.d("messagelist", messagelist.toString())
+//                    myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
+//                    channelchat.adapter = myAdapter1
+//                    myAdapter1.notifyDataSetChanged()
+//                }
+//            }
+//
+//            override fun onCancelled(databaseError: DatabaseError) {
+//                // report/log the error
+//            }
+//        })
+//        Log.d("messagelist", messagelist.toString())
+//        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
+//        channelchat.adapter = myAdapter1
+//        myAdapter1.notifyDataSetChanged()
     }
 
     fun setupMembers() {

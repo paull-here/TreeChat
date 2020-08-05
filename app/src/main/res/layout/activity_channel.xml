@@ -31,11 +31,9 @@
         app:layout_constraintTop_toBottomOf="@+id/channelchat"/>
 
     <EditText
-        android:id="@+id/messagetext"
+        android:id="@+id/writemessagetext"
         android:layout_width="0sp"
         android:layout_height="0sp"
-        android:layout_marginEnd="323dp"
-        android:layout_marginRight="323dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/sendbutton"
         app:layout_constraintTop_toBottomOf="@+id/memberlist"
