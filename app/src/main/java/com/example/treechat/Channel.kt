@@ -4,6 +4,6 @@ package com.example.treechat
 data class Channel (
     var channelname: String ="",
     var description: String="",
-    var members: ArrayList<String> = ArrayList<String>(),
-    var messages: ArrayList<String> = ArrayList<String>()
+    var members: HashMap<String, String> = HashMap<String, String>(),
+    var messages: HashMap<String, String> = HashMap<String, String>()
 )

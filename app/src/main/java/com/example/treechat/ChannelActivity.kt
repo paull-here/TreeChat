@@ -1,19 +1,28 @@
 package com.example.treechat
 
+import android.content.Context
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_channel.*
 import kotlinx.android.synthetic.main.activity_channel_list.*
 import java.lang.Math.abs
+import java.lang.String.format
+import java.text.MessageFormat.format
+import java.time.*
+import java.time.format.DateTimeFormatter
 
 class ChannelActivity : AppCompatActivity() {
     var channelname: String=""
     var description: String=""
+    private val fb = FirebaseDatabase.getInstance().reference
     private var members: MutableList<String> = ArrayList<String>()
     private var messageIDs: MutableList<String> = ArrayList<String>()
     private var messagelist: MutableList<String> = ArrayList<String>()
@@ -32,8 +41,8 @@ class ChannelActivity : AppCompatActivity() {
         channeltitle2.text = channelname
 
         // Retrieve data in channel node
-        val fb = FirebaseDatabase.getInstance().reference
-        Log.d("p2", "in db.reference")
+//        val fb = FirebaseDatabase.getInstance().reference
+//        Log.d("p2", "in db.reference")
         val listOfChannels = fb.child("channel")
         Log.d("p3", "in child channel: " + listOfChannels.toString())
         val channeltree = listOfChannels.orderByChild("name").equalTo(channelname)
@@ -65,27 +74,43 @@ class ChannelActivity : AppCompatActivity() {
         val channelinfo = data.getValue(Channel::class.java)!!
 
         description = channelinfo.description
-        members = channelinfo.members
+
+        val membervalues = channelinfo.members.values
+        for (value in membervalues) {
+            members.add(value)
+        }
+        Log.d("members", members.toString())
         setupMembers()
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo
-        messageIDs = channelinfo.messages
+        val msgkeys = channelinfo.messages.keys
+        for (key in msgkeys) {
+            messageIDs.add(key)
+        }
         Log.d("messageids", messageIDs.toString())
-        val fb = FirebaseDatabase.getInstance().reference
+        setupMessages()
+    }
+
+    fun setupMessages() {
+//        val fb = FirebaseDatabase.getInstance().reference
         val messagetree = fb.child("message").orderByKey()
         messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
-                setupMessages(data)
-                }
+                setupMessagesHelper(data)
+            }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 // report/log the error
             }
         })
-//        setupMessages()
+//        Log.d("messagelist", messagelist.toString())
+//        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
+//        channelchat.adapter = myAdapter1
+//        myAdapter1.notifyDataSetChanged()
     }
 
-    fun setupMessages(data: DataSnapshot) {
+    fun setupMessagesHelper(data: DataSnapshot) {
+
         messagemap = data.getValue(typeindicator)!!
         Log.d("messagemap", messagemap.toString())
         for (ID in messageIDs) {
@@ -96,46 +121,17 @@ class ChannelActivity : AppCompatActivity() {
             Log.d("text", text.toString())
             val timestamp = messagemap[ID]!!["timestamp"]
             Log.d("timestamp", timestamp.toString())
-            messagelist.add("$from: $text - $timestamp")
-
-
+            val finalmessage = "$from: $text - $timestamp"
+            if (messagelist.contains(finalmessage)) {
+                continue
+            } else {
+                messagelist.add("$from: $text - $timestamp")
+            }
         }
         Log.d("messagelist", messagelist.toString())
         myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
         channelchat.adapter = myAdapter1
         myAdapter1.notifyDataSetChanged()
-//        val fb = FirebaseDatabase.getInstance().reference
-//        var typeindicator = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
-//        val messagetree = fb.child("message").orderByKey()
-//        messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
-//            override fun onDataChange(data: DataSnapshot) {
-//                messagemap = data.getValue(typeindicator)!!
-//                Log.d("messagemap", messagemap.toString())
-//                for (ID in messageIDs) {
-//                    Log.d("currID", ID.toString())
-//                    val from = messagemap[ID]!!["from"]
-//                    Log.d("from", from.toString())
-//                    val text = messagemap[ID]!!["text"]
-//                    Log.d("text", text.toString())
-//                    val timestamp = messagemap[ID]!!["timestamp"]
-//                    Log.d("timestamp", timestamp.toString())
-//                    messagelist.add("$from: $text - $timestamp")
-//
-//                    Log.d("messagelist", messagelist.toString())
-//                    myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
-//                    channelchat.adapter = myAdapter1
-//                    myAdapter1.notifyDataSetChanged()
-//                }
-//            }
-//
-//            override fun onCancelled(databaseError: DatabaseError) {
-//                // report/log the error
-//            }
-//        })
-//        Log.d("messagelist", messagelist.toString())
-//        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
-//        channelchat.adapter = myAdapter1
-//        myAdapter1.notifyDataSetChanged()
     }
 
     fun setupMembers() {
@@ -143,4 +139,28 @@ class ChannelActivity : AppCompatActivity() {
         memberlist.adapter = myAdapter2
         myAdapter2.notifyDataSetChanged()
     }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun sendMessageClick (view: View) {
+        val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
+        val from = sharedPref.getString(WelcomeActivity.currentUserKey, "default")
+        Log.d("ca1-username", from)
+        val msgtext = messagetext.text.toString()
+        Log.d("ca2-msgtext", msgtext)
+        var DateTimeZone = ZonedDateTime.now()
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z")
+        val timestamp = DateTimeZone.format(formatter)
+        Log.d("ca2-timestamp", timestamp)
+
+        val channelmessagenode = fb.child("channel/$channelname/messages")
+        val channelmessagekey = channelmessagenode.push().key.toString()
+        channelmessagenode.child(channelmessagekey).setValue(channelmessagekey)
+
+        val messagenode = fb.child("message").child(channelmessagekey)
+        messagenode.child("from").setValue(from)
+        messagenode.child("text").setValue(msgtext)
+        messagenode.child("timestamp").setValue(timestamp)
+        messagetext.text.clear()
+    }
+
 }

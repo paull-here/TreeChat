@@ -31,7 +31,7 @@
         app:layout_constraintTop_toBottomOf="@+id/channelchat"/>
 
     <EditText
-        android:id="@+id/writemessagetext"
+        android:id="@+id/messagetext"
         android:layout_width="0sp"
         android:layout_height="0sp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -46,6 +46,7 @@
         android:layout_height="wrap_content"
         android:text="Send"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:onClick="sendMessageClick"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

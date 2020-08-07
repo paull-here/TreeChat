@@ -110,7 +110,6 @@ class SignInActivity : AppCompatActivity() {
         val credential = GoogleAuthProvider.getCredential(acct.idToken, null)
         mAuth.signInWithCredential(credential).addOnCompleteListener {
             if (it.isSuccessful) {
-
                 val myIntent = Intent(this, ChannelListActivity::class.java)
                 myIntent.putExtra("id", 123)
                 startActivity(myIntent)
