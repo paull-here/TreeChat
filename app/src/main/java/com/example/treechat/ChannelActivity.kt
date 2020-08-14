@@ -93,64 +93,24 @@ class ChannelActivity : AppCompatActivity() {
                 // report/log the error
             }
         })
-//        Log.d("membersTree", membersTree.toString())
-//        val membervalues = channelinfo.members.values
-//
-//        for (value in membervalues) {
-//            members.add(value)
-//        }
-//        Log.d("members", members.toString())
-//        setupMembers()
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo
-//        val msgkeys = channelinfo.messages.keys
-//        for (key in msgkeys) {
-//            messageIDs.add(key)
-//        }
-//        messageIDs.sortedDescending()
-//        // [-ME9H68vtAfbi31RHB2E, -ME9H54n-igo_KcjQ7JM, uniqueid1]
-//        Log.d("messageids", messageIDs.toString())
-//        setupMessages()
 
-        val messageTree = fb.child("/channel/$channelname/messages").orderByKey()
-        messageTree.addListenerForSingleValueEvent( object: ValueEventListener {
-            override fun onDataChange(data: DataSnapshot) {
-                val messagesMap =
-                    data.getValue(object : GenericTypeIndicator<HashMap<String, String>>() {})!!
-//                for (key in messagesMap) {
-//                    messageIDs.add(0, key.value)
-//                }
-//                Log.d("messageids", messageIDs.toString())
-                setupMessages()
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // report/log the error
-            }
-        })
-    }
-
-    fun setupMessages() {
-//        val fb = FirebaseDatabase.getInstance().reference
         val messagetree = fb.child("message").orderByKey()
         messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onDataChange(data: DataSnapshot) {
-                setupMessagesHelper(data)
+                setupMessages(data)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 // report/log the error
             }
         })
-//        Log.d("messagelist", messagelist.toString())
-//        myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
-//        channelchat.adapter = myAdapter1
-//        myAdapter1.notifyDataSetChanged()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun setupMessagesHelper(data: DataSnapshot) {
+    fun setupMessages(data: DataSnapshot) {
 
         messagemap = data.getValue(typeindicator)!!
         val messagemapkeys = ArrayList<String>()
@@ -170,8 +130,6 @@ class ChannelActivity : AppCompatActivity() {
             messagemapmsgtexts.add(msgtext)
             val rawTimestampZDT : String = key.value["rawTimestampZDT"]!!
             messagemaptimestamps.add(rawTimestampZDT)
-//            val ZDT : String = key.value["ZDTstring"]!!
-//            messagemapZDTs.add(ZDT)
         }
         Log.d("messagemapkeys", messagemapkeys.toString())
         Log.d("messagemapfroms", messagemapfroms.toString())
@@ -205,22 +163,6 @@ class ChannelActivity : AppCompatActivity() {
             }
         }
 
-//        Log.d("messagemap", messagemap.toString())
-//        for (ID in messageIDs) {
-//            Log.d("currID", ID.toString())
-//            val from = messagemap[ID]!!["from"]
-//            Log.d("from", from.toString())
-//            val text = messagemap[ID]!!["text"]
-//            Log.d("text", text.toString())
-//            val timestamp = messagemap[ID]!!["timestamp"]
-//            Log.d("timestamp", timestamp.toString())
-//            val finalmessage = "$from: $text - $timestamp"
-//            if (messagelist.contains(finalmessage)) {
-//                continue
-//            } else {
-//                messagelist.add(finalmessage)
-//            }
-//        }
         Log.d("messagelist", messagelist.toString())
         myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
         channelchat.adapter = myAdapter1
