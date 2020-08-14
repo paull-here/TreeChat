@@ -23,11 +23,13 @@ class ChannelActivity : AppCompatActivity() {
     var channelname: String=""
     var description: String=""
     private val fb = FirebaseDatabase.getInstance().reference
-    private var members: MutableList<String> = ArrayList<String>()
-    private var messageIDs: MutableList<String> = ArrayList<String>()
-    private var messagelist: MutableList<String> = ArrayList<String>()
-    private var messagemap: HashMap<String, HashMap<String, String>> = HashMap<String, HashMap<String, String>>()
+    private var members: MutableList<String> = ArrayList()
+//    private var messageIDs: MutableList<String> = ArrayList()
+    private var messagelist: MutableList<String> = ArrayList()
+    private var messagemap: HashMap<String, HashMap<String, String>> = HashMap()
     private var typeindicator = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
+    @RequiresApi(Build.VERSION_CODES.O)
+    private var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a zzz")
     private lateinit var myAdapter1 : ArrayAdapter<String>
     private lateinit var myAdapter2 : ArrayAdapter<String>
 
@@ -72,29 +74,67 @@ class ChannelActivity : AppCompatActivity() {
 
         val data = arr.children.iterator().next()
         val channelinfo = data.getValue(Channel::class.java)!!
+        // TODO: need to retrieve keys in order by using orderByKeys
 
         description = channelinfo.description
+        val membersTree = fb.child("/channel/$channelname/members").orderByKey()
+        membersTree.addListenerForSingleValueEvent( object: ValueEventListener {
+            override fun onDataChange(data: DataSnapshot) {
+                val membersMap =
+                    data.getValue(object : GenericTypeIndicator<HashMap<String, String>>() {})!!
+                for (key in membersMap) {
+                    members.add(key.value)
+                }
+                Log.d("members", members.toString())
+                setupMembers()
+            }
 
-        val membervalues = channelinfo.members.values
-        for (value in membervalues) {
-            members.add(value)
-        }
-        Log.d("members", members.toString())
-        setupMembers()
+            override fun onCancelled(databaseError: DatabaseError) {
+                // report/log the error
+            }
+        })
+//        Log.d("membersTree", membersTree.toString())
+//        val membervalues = channelinfo.members.values
+//
+//        for (value in membervalues) {
+//            members.add(value)
+//        }
+//        Log.d("members", members.toString())
+//        setupMembers()
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo
-        val msgkeys = channelinfo.messages.keys
-        for (key in msgkeys) {
-            messageIDs.add(key)
-        }
-        Log.d("messageids", messageIDs.toString())
-        setupMessages()
+//        val msgkeys = channelinfo.messages.keys
+//        for (key in msgkeys) {
+//            messageIDs.add(key)
+//        }
+//        messageIDs.sortedDescending()
+//        // [-ME9H68vtAfbi31RHB2E, -ME9H54n-igo_KcjQ7JM, uniqueid1]
+//        Log.d("messageids", messageIDs.toString())
+//        setupMessages()
+
+        val messageTree = fb.child("/channel/$channelname/messages").orderByKey()
+        messageTree.addListenerForSingleValueEvent( object: ValueEventListener {
+            override fun onDataChange(data: DataSnapshot) {
+                val messagesMap =
+                    data.getValue(object : GenericTypeIndicator<HashMap<String, String>>() {})!!
+//                for (key in messagesMap) {
+//                    messageIDs.add(0, key.value)
+//                }
+//                Log.d("messageids", messageIDs.toString())
+                setupMessages()
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // report/log the error
+            }
+        })
     }
 
     fun setupMessages() {
 //        val fb = FirebaseDatabase.getInstance().reference
         val messagetree = fb.child("message").orderByKey()
         messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
+            @RequiresApi(Build.VERSION_CODES.O)
             override fun onDataChange(data: DataSnapshot) {
                 setupMessagesHelper(data)
             }
@@ -109,25 +149,78 @@ class ChannelActivity : AppCompatActivity() {
 //        myAdapter1.notifyDataSetChanged()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun setupMessagesHelper(data: DataSnapshot) {
 
         messagemap = data.getValue(typeindicator)!!
-        Log.d("messagemap", messagemap.toString())
-        for (ID in messageIDs) {
-            Log.d("currID", ID.toString())
-            val from = messagemap[ID]!!["from"]
-            Log.d("from", from.toString())
-            val text = messagemap[ID]!!["text"]
-            Log.d("text", text.toString())
-            val timestamp = messagemap[ID]!!["timestamp"]
-            Log.d("timestamp", timestamp.toString())
-            val finalmessage = "$from: $text - $timestamp"
+        val messagemapkeys = ArrayList<String>()
+        val messagemapfroms = ArrayList<String>()
+        val messagemapmsgtexts = ArrayList<String>()
+        var messagemaptimestamps = ArrayList<String>()
+        var messagemapZDTs = ArrayList<ZonedDateTime>()
+        var listOfMsgObjs = ArrayList<Message>()
+
+        // Populate message property arraylists with data
+        for (key in messagemap) {
+            val keys : String = key.key
+            messagemapkeys.add(keys)
+            val from : String = key.value["from"]!!
+            messagemapfroms.add(from)
+            val msgtext : String = key.value["text"]!!
+            messagemapmsgtexts.add(msgtext)
+            val rawTimestampZDT : String = key.value["rawTimestampZDT"]!!
+            messagemaptimestamps.add(rawTimestampZDT)
+//            val ZDT : String = key.value["ZDTstring"]!!
+//            messagemapZDTs.add(ZDT)
+        }
+        Log.d("messagemapkeys", messagemapkeys.toString())
+        Log.d("messagemapfroms", messagemapfroms.toString())
+        Log.d("messagemapmsgtexts", messagemapmsgtexts.toString())
+        Log.d("messagemaptimestamps", messagemaptimestamps.toString())
+
+//         Convert timestamps to ZonedDateTime objects
+        for (timestamp in messagemaptimestamps) {
+            val ZDT = ZonedDateTime.parse(timestamp)
+            messagemapZDTs.add(ZDT)
+        }
+
+        Log.d("messagemapZDTs", messagemapZDTs.toString())
+
+        // Create Message objects and put in list to be sorted
+        for (i in 0 until messagemapkeys.size) {
+            val Messageobj = Message(messagemapkeys.get(i), messagemapfroms.get(i),
+                messagemapmsgtexts.get(i), messagemapZDTs.get(i))
+            listOfMsgObjs.add(Messageobj)
+        }
+
+        // .sort() sorts in-place, needs mutable list. .sorted() returns new list
+        listOfMsgObjs.sort()
+
+        for (msg in listOfMsgObjs) {
+            val finalmessage = msg.toString()
             if (messagelist.contains(finalmessage)) {
                 continue
             } else {
-                messagelist.add("$from: $text - $timestamp")
+                messagelist.add(finalmessage)
             }
         }
+
+//        Log.d("messagemap", messagemap.toString())
+//        for (ID in messageIDs) {
+//            Log.d("currID", ID.toString())
+//            val from = messagemap[ID]!!["from"]
+//            Log.d("from", from.toString())
+//            val text = messagemap[ID]!!["text"]
+//            Log.d("text", text.toString())
+//            val timestamp = messagemap[ID]!!["timestamp"]
+//            Log.d("timestamp", timestamp.toString())
+//            val finalmessage = "$from: $text - $timestamp"
+//            if (messagelist.contains(finalmessage)) {
+//                continue
+//            } else {
+//                messagelist.add(finalmessage)
+//            }
+//        }
         Log.d("messagelist", messagelist.toString())
         myAdapter1 = ArrayAdapter(this, android.R.layout.simple_list_item_1, messagelist)
         channelchat.adapter = myAdapter1
@@ -148,7 +241,6 @@ class ChannelActivity : AppCompatActivity() {
         val msgtext = messagetext.text.toString()
         Log.d("ca2-msgtext", msgtext)
         var DateTimeZone = ZonedDateTime.now()
-        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z")
         val timestamp = DateTimeZone.format(formatter)
         Log.d("ca2-timestamp", timestamp)
 
@@ -160,6 +252,7 @@ class ChannelActivity : AppCompatActivity() {
         messagenode.child("from").setValue(from)
         messagenode.child("text").setValue(msgtext)
         messagenode.child("timestamp").setValue(timestamp)
+        messagenode.child("rawTimestampZDT").setValue(DateTimeZone.toString())
         messagetext.text.clear()
     }
 
