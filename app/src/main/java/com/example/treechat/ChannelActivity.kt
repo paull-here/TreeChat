@@ -24,10 +24,10 @@ class ChannelActivity : AppCompatActivity() {
     var description: String=""
     private val fb = FirebaseDatabase.getInstance().reference
     private var members: MutableList<String> = ArrayList()
-//    private var messageIDs: MutableList<String> = ArrayList()
     private var messagelist: MutableList<String> = ArrayList()
     private var messagemap: HashMap<String, HashMap<String, String>> = HashMap()
-    private var typeindicator = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
+    private var typeindicator1 = object : GenericTypeIndicator<HashMap<String, HashMap<String, String>>>(){}
+    private var typeindicator2 = object : GenericTypeIndicator<HashMap<String, String>>(){}
     @RequiresApi(Build.VERSION_CODES.O)
     private var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a zzz")
     private lateinit var myAdapter1 : ArrayAdapter<String>
@@ -42,9 +42,10 @@ class ChannelActivity : AppCompatActivity() {
         Log.d("chan_name", channelname.toString())
         channeltitle2.text = channelname
 
+        supportActionBar?.setTitle(channelname)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
         // Retrieve data in channel node
-//        val fb = FirebaseDatabase.getInstance().reference
-//        Log.d("p2", "in db.reference")
         val listOfChannels = fb.child("channel")
         Log.d("p3", "in child channel: " + listOfChannels.toString())
         val channeltree = listOfChannels.orderByChild("name").equalTo(channelname)
@@ -77,6 +78,8 @@ class ChannelActivity : AppCompatActivity() {
         // TODO: need to retrieve keys in order by using orderByKeys
 
         description = channelinfo.description
+        val currChannelMsgIDs = ArrayList<String>()
+
         val membersTree = fb.child("/channel/$channelname/members").orderByKey()
         membersTree.addListenerForSingleValueEvent( object: ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
@@ -96,11 +99,23 @@ class ChannelActivity : AppCompatActivity() {
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo
 
+        val messagesInCurrChannel = fb.child("/channel/$channelname/messages")
+        var noMessages = false
+        messagesInCurrChannel.addListenerForSingleValueEvent(object: ValueEventListener{
+            override fun onDataChange(data: DataSnapshot) {
+                getMessageIDs(data, currChannelMsgIDs)
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // report/log the error
+            }
+        })
+
         val messagetree = fb.child("message").orderByKey()
         messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onDataChange(data: DataSnapshot) {
-                setupMessages(data)
+                setupMessages(data, currChannelMsgIDs)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -109,29 +124,43 @@ class ChannelActivity : AppCompatActivity() {
         })
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun setupMessages(data: DataSnapshot) {
+    fun getMessageIDs(data: DataSnapshot, currChannelMsgIDs: ArrayList<String>): ArrayList<String> {
+        if (data.exists()) {
+            val currChannelMsgMap = data.getValue(typeindicator2)!!
+            for (key in currChannelMsgMap) {
+                currChannelMsgIDs.add(key.key)
+            }
+            return currChannelMsgIDs
+        } else {
+            return currChannelMsgIDs
+        }
+    }
 
-        messagemap = data.getValue(typeindicator)!!
-        val messagemapkeys = ArrayList<String>()
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun setupMessages(data: DataSnapshot, currChannelMsgIDs: MutableList<String>) {
+
+        if (currChannelMsgIDs.isEmpty()) {
+            return
+        }
+
+        messagemap = data.getValue(typeindicator1)!!
         val messagemapfroms = ArrayList<String>()
         val messagemapmsgtexts = ArrayList<String>()
-        var messagemaptimestamps = ArrayList<String>()
-        var messagemapZDTs = ArrayList<ZonedDateTime>()
-        var listOfMsgObjs = ArrayList<Message>()
+        val messagemaptimestamps = ArrayList<String>()
+        val messagemapZDTs = ArrayList<ZonedDateTime>()
+        val listOfMsgObjs = ArrayList<Message>()
 
-        // Populate message property arraylists with data
-        for (key in messagemap) {
-            val keys : String = key.key
-            messagemapkeys.add(keys)
-            val from : String = key.value["from"]!!
+        // Populate message attribute arraylists with data
+        for (key in currChannelMsgIDs) {
+            val from = messagemap[key]!!["from"]!!
             messagemapfroms.add(from)
-            val msgtext : String = key.value["text"]!!
+            val msgtext = messagemap[key]!!["text"]!!
             messagemapmsgtexts.add(msgtext)
-            val rawTimestampZDT : String = key.value["rawTimestampZDT"]!!
+            val rawTimestampZDT = messagemap[key]!!["rawTimestampZDT"]!!
             messagemaptimestamps.add(rawTimestampZDT)
         }
-        Log.d("messagemapkeys", messagemapkeys.toString())
+
+        Log.d("currChannelMsgIDs", currChannelMsgIDs.toString())
         Log.d("messagemapfroms", messagemapfroms.toString())
         Log.d("messagemapmsgtexts", messagemapmsgtexts.toString())
         Log.d("messagemaptimestamps", messagemaptimestamps.toString())
@@ -145,11 +174,12 @@ class ChannelActivity : AppCompatActivity() {
         Log.d("messagemapZDTs", messagemapZDTs.toString())
 
         // Create Message objects and put in list to be sorted
-        for (i in 0 until messagemapkeys.size) {
-            val Messageobj = Message(messagemapkeys.get(i), messagemapfroms.get(i),
+        for (i in 0 until currChannelMsgIDs.size) {
+            val Messageobj = Message(currChannelMsgIDs.get(i), messagemapfroms.get(i),
                 messagemapmsgtexts.get(i), messagemapZDTs.get(i))
             listOfMsgObjs.add(Messageobj)
         }
+        Log.d("listOfMsgObjs", listOfMsgObjs.toString())
 
         // .sort() sorts in-place, needs mutable list. .sorted() returns new list
         listOfMsgObjs.sort()

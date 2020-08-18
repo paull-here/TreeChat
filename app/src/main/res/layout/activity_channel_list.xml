@@ -17,16 +17,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-<!--    <Button-->
-<!--        android:id="@+id/logout"-->
-<!--        android:text="LOGOUT"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        app:layout_constraintStart_toStartOf="parent"-->
-<!--        app:layout_constraintEnd_toEndOf="parent"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent"-->
-<!--        android:layout_marginBottom="20sp"-->
-<!--        />-->
 
     <ListView
         android:layout_width="match_parent"
@@ -34,37 +24,13 @@
         android:id="@+id/listofchannels"
         app:layout_constraintTop_toBottomOf="@+id/channeltitle"
         app:layout_constraintBottom_toTopOf="@id/addChannelButton"/>
-<!--        android:nestedScrollingEnabled="true"-->
-
-<!--    <androidx.core.widget.NestedScrollView-->
-<!--        android:id="@+id/channelslist"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="0sp"-->
-<!--        app:layout_constraintTop_toBottomOf="@+id/channeltitle"-->
-<!--        app:layout_constraintBottom_toTopOf="@id/addChannelButton"-->
-<!--        android:fillViewport="true">-->
-<!--&lt;!&ndash;        android:clipToPadding="true"&ndash;&gt;-->
-<!--&lt;!&ndash;        android:fillViewport="true"&ndash;&gt;-->
-<!--&lt;!&ndash;        android:fitsSystemWindows="true"&ndash;&gt;-->
-
-
-
-<!--        <ListView-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="0sp"-->
-<!--            android:nestedScrollingEnabled="true"-->
-
-<!--            android:id="@+id/listofchannels"-->
-<!--            app:layout_constraintTop_toTopOf="parent"-->
-<!--            app:layout_constraintBottom_toBottomOf="parent"/>-->
-<!--        -->
-<!--    </androidx.core.widget.NestedScrollView>-->
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="40sp"
         android:id="@+id/addChannelButton"
         android:text="Add Channel"
+        android:onClick="addChannel"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginRight="10sp"
         android:layout_marginLeft="10sp"

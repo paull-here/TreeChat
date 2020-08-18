@@ -33,7 +33,6 @@ class WelcomeActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         FirebaseApp.initializeApp(this)
-        var mAuth = FirebaseAuth.getInstance()
 
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         val current_user = sharedPref.getString(currentUserKey, "default")
@@ -50,29 +49,6 @@ class WelcomeActivity : AppCompatActivity() {
 
         Log.d("pltime", tie.toString())
     }
-
-//    override fun onPause() {
-//        super.onPause()
-//
-//        val sharedPref = getPreferences(Context.MODE_PRIVATE)
-//
-//
-//        val current_user = sharedPref.getString(currentUserKey, "default")
-//        val current_pass = sharedPref.getString(currentPassKey, "default")
-//        Log.d("PL7", "CURRENT USER IS: " + current_user.toString())
-//        Log.d("PL7", "CURRENT PASS IS: " + current_pass.toString())
-//    }
-//
-//    override fun onResume() {
-//        super.onResume()
-//        val sharedPref = getPreferences(Context.MODE_PRIVATE)
-//        val current_user = sharedPref.getString(currentUserKey, "default")
-//        val current_pass = sharedPref.getString(currentPassKey, "default")
-//        Log.d("PL8", "CURRENT USER IS: " + current_user.toString())
-//        Log.d("PL8", "CURRENT PASS IS: " + current_pass.toString())
-//
-//    }
-
 
     fun signIn (view: View) {
         val myIntent = Intent(this, SignInActivity::class.java)
