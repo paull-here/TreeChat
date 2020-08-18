@@ -28,11 +28,14 @@ class WelcomeActivity : AppCompatActivity() {
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         FirebaseApp.initializeApp(this)
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+
 
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         val current_user = sharedPref.getString(currentUserKey, "default")

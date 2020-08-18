@@ -5,7 +5,6 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import com.example.treechat.WelcomeActivity.Companion.currentPassKey
 import com.example.treechat.WelcomeActivity.Companion.currentUserKey
 import com.example.treechat.WelcomeActivity.Companion.password
@@ -18,8 +17,8 @@ import androidx.core.app.ComponentActivity
 import androidx.core.app.ComponentActivity.ExtraData
 import androidx.core.content.ContextCompat.getSystemService
 import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.view.Menu
-import android.view.MenuItem
+import android.view.*
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import com.google.firebase.database.*
@@ -27,6 +26,7 @@ import com.google.firebase.database.*
 class ChannelListActivity : AppCompatActivity() {
 
     lateinit var mAuth : FirebaseAuth
+    private var channelToDelete = ""
     private var channelList: MutableList<String> = ArrayList()
     private lateinit var myAdapter : ArrayAdapter<String>
     private var fb = FirebaseDatabase.getInstance().reference
@@ -39,6 +39,13 @@ class ChannelListActivity : AppCompatActivity() {
 
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         val current_user = sharedPref.getString(currentUserKey, "default")
+
+        listofchannels.setOnItemLongClickListener{_,_,index,_ ->
+            Log.d("Longclicklistener","Registered item long click")
+            channelToDelete = channelList[index]
+            registerForContextMenu(listofchannels)
+            false
+        }
 
         listofchannels.setOnItemClickListener{ _,_,index,_ ->
             //TODO: Figure out how to go from an onclicklistener by index to starting channel
@@ -85,8 +92,32 @@ class ChannelListActivity : AppCompatActivity() {
                 Log.d("p6", "Data didn't arrive")
             }
         })
-
     }
+
+    override fun onCreateContextMenu(
+        menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+        super.onCreateContextMenu(menu, v, menuInfo)
+        Log.d("createcontextmenu", "Reached onCreateContextMenu")
+        menuInflater.inflate(R.menu.deletechannel, menu)
+        Log.d("ChanneltoDelete", "Reached channel to delete= $channelToDelete")
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.deleteoption -> {
+                deleteChannel()
+                return true
+            }
+            else -> {
+                return super.onContextItemSelected(item)
+            }
+        }
+    }
+
+    fun deleteChannel() {
+        Log.d("channeltodelete", channelToDelete)
+    }
+
     fun processChannelListData(data: DataSnapshot) {
         val channelnames = data.children.toMutableList()
         var channels = ArrayList<String>()
@@ -199,3 +230,4 @@ class ChannelListActivity : AppCompatActivity() {
 //        startActivity(WelcomeActivity.getLaunchIntent(this))
     }
 }
+
