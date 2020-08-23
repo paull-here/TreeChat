@@ -25,6 +25,7 @@ import android.preference.PreferenceManager
 import android.preference.PreferenceManager.getDefaultSharedPreferences
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.example.treechat.R // <----- changed
+import com.example.treechat.WelcomeActivity.Companion.autoLoginCheck
 //import com.example.treechat.WelcomeActivity.Companion.FIREBASE_PASSWORD
 //import com.example.treechat.WelcomeActivity.Companion.FIREBASE_USERNAME
 import com.example.treechat.WelcomeActivity.Companion.currentPassKey
@@ -205,19 +206,11 @@ class SignInActivity : AppCompatActivity() {
         if (pass == password) {
             Log.d("PL3", "Current CHECK IS:" + checkBox.isChecked.toString())
             if (checkBox.isChecked) {
-//                val thread = Thread {
-//                    val sharedPref = this.getPreferences(Context.MODE_PRIVATE)
-//                    with (sharedPref.edit()) {
-//                        putString("current_user", chatuser.username)
-//                        putString("current_pass", chatuser.password)
-//                        commit()
-//                    }
-//                }
-//                thread.start()
                 val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
                 with (sharedPref.edit()) {
                     putString(currentUserKey, username)
                     putString(currentPassKey, password)
+                    putString(autoLoginCheck, "true")
                     apply()
                 }
                 WelcomeActivity.username = username

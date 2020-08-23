@@ -19,6 +19,7 @@ class WelcomeActivity : AppCompatActivity() {
     companion object {
         const val currentUserKey = "current_user"
         const val currentPassKey = "current_pass"
+        const val autoLoginCheck = "autoLoginCheck"
         var username = ""
         var password = ""
         var signedInAndChecked = false
@@ -33,8 +34,8 @@ class WelcomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        FirebaseApp.initializeApp(this)
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        FirebaseApp.initializeApp(this)
         val messageSync = FirebaseDatabase.getInstance().getReference("message")
         messageSync.keepSynced(true)
         val channelSync = FirebaseDatabase.getInstance().getReference("channel")

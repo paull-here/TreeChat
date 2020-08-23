@@ -10,8 +10,8 @@
         app:showAsAction="collapseActionView"/>
 
     <item
-        android:id="@+id/item2"
-        android:title="Item 2"
+        android:id="@+id/deleteAccountButton"
+        android:title="Delete Account"
         app:showAsAction="collapseActionView"/>
 
 
