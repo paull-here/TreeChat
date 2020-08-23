@@ -75,19 +75,28 @@ class ChannelActivity : AppCompatActivity() {
 
         val data = arr.children.iterator().next()
         val channelinfo = data.getValue(Channel::class.java)!!
-        // TODO: need to retrieve keys in order by using orderByKeys
 
         description = channelinfo.description
-        val currChannelMsgIDs = ArrayList<String>()
 
+        // TODO: Retrieve member map
         val membersTree = fb.child("/channel/$channelname/members").orderByKey()
         membersTree.addListenerForSingleValueEvent( object: ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 val membersMap =
                     data.getValue(object : GenericTypeIndicator<HashMap<String, String>>() {})!!
                 for (key in membersMap) {
-                    members.add(key.value)
+                    if (key.value !in members) {
+                        members.add(key.value)
+                    }
                 }
+                // Version where temp list replaces entire member's arraylist
+//                var tempMembers = ArrayList<String>()
+//                for (key in membersMap) {
+//                    if (key.value !in members) {
+//                        tempMembers.add(key.value)
+//                    }
+//                }
+//                members = tempMembers
                 Log.d("members", members.toString())
                 setupMembers()
             }
@@ -97,10 +106,9 @@ class ChannelActivity : AppCompatActivity() {
             }
         })
 
-        //TODO: retrieve data from message section in tree, not in the same place as channelinfo
-
-        val messagesInCurrChannel = fb.child("/channel/$channelname/messages")
-        var noMessages = false
+        // TODO: Scan for changes in messages tree under channel node
+        val currChannelMsgIDs = ArrayList<String>()
+        val messagesInCurrChannel = fb.child("/channel/$channelname/messages").orderByKey()
         messagesInCurrChannel.addListenerForSingleValueEvent(object: ValueEventListener{
             override fun onDataChange(data: DataSnapshot) {
                 getMessageIDs(data, currChannelMsgIDs)
@@ -111,7 +119,11 @@ class ChannelActivity : AppCompatActivity() {
             }
         })
 
-        val messagetree = fb.child("message").orderByKey()
+        //TODO: retrieve data from message section in tree, not in the same place as channelinfo
+        // TODO: Fix bug where messagemap is not retrieving all the messages (DONE)
+        // This bug was because of the persistence state saving old messages, added code to keep
+        // all three main nodes of the Firebase database synchronized
+        val messagetree = fb.child("message")
         messagetree.addListenerForSingleValueEvent(object: ValueEventListener {
             @RequiresApi(Build.VERSION_CODES.O)
             override fun onDataChange(data: DataSnapshot) {
@@ -130,20 +142,19 @@ class ChannelActivity : AppCompatActivity() {
             for (key in currChannelMsgMap) {
                 currChannelMsgIDs.add(key.key)
             }
-            return currChannelMsgIDs
-        } else {
-            return currChannelMsgIDs
         }
+        return currChannelMsgIDs
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun setupMessages(data: DataSnapshot, currChannelMsgIDs: MutableList<String>) {
 
+        Log.d("currChannelMsgIDs", currChannelMsgIDs.toString())
         if (currChannelMsgIDs.isEmpty()) {
             return
         }
-
         messagemap = data.getValue(typeindicator1)!!
+        Log.d("Messagemap", messagemap.toString())
         val messagemapfroms = ArrayList<String>()
         val messagemapmsgtexts = ArrayList<String>()
         val messagemaptimestamps = ArrayList<String>()

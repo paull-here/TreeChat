@@ -35,6 +35,13 @@ class WelcomeActivity : AppCompatActivity() {
 
         FirebaseApp.initializeApp(this)
         FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+        val messageSync = FirebaseDatabase.getInstance().getReference("message")
+        messageSync.keepSynced(true)
+        val channelSync = FirebaseDatabase.getInstance().getReference("channel")
+        channelSync.keepSynced(true)
+        val userSync = FirebaseDatabase.getInstance().getReference("user")
+        userSync.keepSynced(true)
+
 
 
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return

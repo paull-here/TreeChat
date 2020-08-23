@@ -46,12 +46,11 @@ class ChannelListActivity : AppCompatActivity() {
             registerForContextMenu(listofchannels)
             false
         }
-
+        
         listofchannels.setOnItemClickListener{ _,_,index,_ ->
             //TODO: Figure out how to go from an onclicklistener by index to starting channel
             Log.d("toChannel1", "Clicked channel from channel list, moving to ChannelActivity")
-            var memberInChannelFlag = false
-            fb.child("/channel/${channelList[index]}/members").equalTo(current_user)
+            fb.child("/channel/${channelList[index]}/members")
                 .addListenerForSingleValueEvent(object: ValueEventListener {
                     override fun onDataChange(data: DataSnapshot) {
 //                        memberInChannelFlag = retrieveMemberMap(data, current_user!!)
@@ -61,7 +60,13 @@ class ChannelListActivity : AppCompatActivity() {
 //                            fb.child("/channel/${channelList[index]}/members/$newMemberKey")
 //                                .setValue(current_user)
 //                        }
-                        if (!data.exists()) {
+                        var memberInChannel = false
+                        for (key in data.children) {
+                            if (key.value == current_user) {
+                                memberInChannel = true
+                            }
+                        }
+                        if (!memberInChannel) {
                             val newMemberKey = fb.child("/channel/${channelList[index]}/members")
                                 .push().key.toString()
                             fb.child("/channel/${channelList[index]}/members/$newMemberKey")
@@ -80,6 +85,7 @@ class ChannelListActivity : AppCompatActivity() {
             Log.d("toChannel2", "Clicked channel from channel list, moving to ChannelActivity")
         }
 
+        // TODO: Fix bug where extra key/value pairs are being made for the same user
         val channeltree = fb.child("/channel")
         channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
@@ -114,9 +120,61 @@ class ChannelListActivity : AppCompatActivity() {
         }
     }
 
+    // TODO: Fix bug where can't retrieve/delete messages from /message node (DONE)
+    // This bug was because the program flow with listeners is not synchronous, have to execute
+    // everything inside the listener if the rest of the code depends on it
     fun deleteChannel() {
         Log.d("channeltodelete", channelToDelete)
+        val messageKeysToDelete = ArrayList<String>()
+        fb.child("/channel/$channelToDelete/messages")
+            .addListenerForSingleValueEvent(object: ValueEventListener {
+                override fun onDataChange(data: DataSnapshot) {
+                    val messagemap = data.getValue(typeindicator2)!!
+                    Log.d("messagemap7", messagemap.toString())
+                    for (key in messagemap) {
+                        messageKeysToDelete.add(key.key)
+                    }
+                    Log.d("messageKeysToDelete1", messageKeysToDelete.toString())
+
+                    for (key in messageKeysToDelete) {
+                        Log.d("deleting messages", fb.child("/message/$key").key.toString())
+                        fb.child("message/$key").removeValue()
+                        Log.d("deletedmessage1", "deletedmessage")
+                    }
+
+                    Log.d("deletedchannel1", "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}")
+                    fb.child("/channel/$channelToDelete").removeValue()
+                }
+
+                override fun onCancelled(databaseError: DatabaseError) {
+                    // report/log the error
+                }
+            })
     }
+
+//    fun deleteChannelHelper(messageKeysToDelete: ArrayList<String>) {
+//        fb.child("message").addListenerForSingleValueEvent(
+//            object: ValueEventListener {
+//                override fun onDataChange(data: DataSnapshot) {
+//                    for (node in data.children) {
+//                        messagemapkeys.add(node.key.toString())
+//                    }
+//                    Log.d("messagemapkeys1", messagemapkeys.toString())
+//
+//                    for (key in messageKeysToDelete) {
+//                        Log.d("deleting messages", fb.child("/message/$key").key.toString())
+////                                    fb.child("message/$key").removeValue()
+//                        Log.d("deletedmessage1", "deletedmessage")
+//                    }
+//
+//                    Log.d("deletedchannel1", "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}")
+////        fb.child("/channel/$channelToDelete").removeValue()
+//                }
+//                override fun onCancelled(databaseError: DatabaseError) {
+//                    // report/log the error
+//                }
+//            })
+//    }
 
     fun processChannelListData(data: DataSnapshot) {
         val channelnames = data.children.toMutableList()
@@ -191,8 +249,8 @@ class ChannelListActivity : AppCompatActivity() {
         if (!data.exists()) {
             val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
             val userID = sharedPref.getString(currentUserKey, "default")
-            val memberkey = fb.child("/channel/$channelname/members").push()
-            fb.child("/channel/$channelname/members/${memberkey.key}").setValue("$userID")
+            val memberkey = fb.child("/channel/$channelname/members").push().key.toString()
+            fb.child("/channel/$channelname/members/${memberkey}").setValue("$userID")
             fb.child("/channel/$channelname/messages")
             fb.child("/channel/$channelname/name").setValue(channelname)
 
