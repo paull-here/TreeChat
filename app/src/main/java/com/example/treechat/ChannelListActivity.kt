@@ -199,13 +199,13 @@ class ChannelListActivity : AppCompatActivity() {
         }
     }
 
-    // TODO: Implement deleting account, including removing user information from each channel
+    // TODO: Implement deleting account, including removing user information from each channel (DONE)
     fun deleteAccount() {
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         val currentUser = sharedPref.getString(currentUserKey, "default")
         Log.d("accountToDelete", currentUserKey)
         val memberKeysToDelete = ArrayList<ArrayList<String>>()
-        fb.child("/user/channels")
+        fb.child("/user/$currentUser/channels")
             .addListenerForSingleValueEvent(object: ValueEventListener {
                 override fun onDataChange(data: DataSnapshot) {
                     if (!data.exists()) {
@@ -224,14 +224,14 @@ class ChannelListActivity : AppCompatActivity() {
                     for (keyValuePair in memberKeysToDelete) {
                         Log.d("removingfromchannel", fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}").key.toString())
                         // Uncomment when actually deleting
-//                        fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}")
-//                            .removeValue()
-                        Log.d("deletedchannel", "deletedfrom${keyValuePair[0]}")
+                        fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}")
+                            .removeValue()
+                        Log.d("deletedchannel", "deletedfrom: ${keyValuePair[0]}")
                     }
 
                     Log.d("deleteduser", "deleteduser ${fb.child("/user/$currentUser").key.toString()}")
                     // Uncomment when actually deleting
-//                    fb.child("/user/$currentUser").removeValue()
+                    fb.child("/user/$currentUser").removeValue()
                     logoutClick()
                 }
 
