@@ -9,10 +9,7 @@ import android.view.View
 import android.widget.Toast
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.FirebaseDatabase
-import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_sign_in.*
 
 class WelcomeActivity : AppCompatActivity() {
@@ -20,6 +17,7 @@ class WelcomeActivity : AppCompatActivity() {
         const val currentUserKey = "current_user"
         const val currentPassKey = "current_pass"
         const val autoLoginCheck = "autoLoginCheck"
+        private lateinit var mDatabase: DatabaseReference
         var username = ""
         var password = ""
         var signedInAndChecked = false
@@ -34,7 +32,11 @@ class WelcomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
+//        if (mDatabase == null) {
+//            val database = FirebaseDatabase.getInstance()
+//            database.setPersistenceEnabled(true)
+//            mDatabase = database.reference
+//        }
         FirebaseApp.initializeApp(this)
         val messageSync = FirebaseDatabase.getInstance().getReference("message")
         messageSync.keepSynced(true)
@@ -50,8 +52,12 @@ class WelcomeActivity : AppCompatActivity() {
         val current_pass = sharedPref.getString(currentPassKey, "default")
         Log.d("PL1", "CURRENT USER IS: " + current_user.toString())
         Log.d("PL1", "CURRENT PASS IS: " + current_pass.toString())
-        if (current_user != "default" && current_user != null && current_pass != "default" &&
-            current_pass != null) {
+//        if (current_user != "default" && current_user != null && current_pass != "default" &&
+//            current_pass != null) {
+//            autoLogin(current_user.toString(), current_pass.toString())
+//        }
+
+        if (sharedPref.getString(autoLoginCheck, "default") == "true") {
             autoLogin(current_user.toString(), current_pass.toString())
         }
 
@@ -66,8 +72,13 @@ class WelcomeActivity : AppCompatActivity() {
         startActivity(myIntent)
     }
 
+    // TODO: Fix autologin and login staying as default in SharedPreferences
     fun autoLogin(user: String, pass: String) {
         // Get person's user/pass
+        val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
+        if (sharedPref.getString(autoLoginCheck, "default") != "true") {
+            return
+        }
 
         // Look up credentials in Firebase
         Log.d("pl", "in autoLogin")

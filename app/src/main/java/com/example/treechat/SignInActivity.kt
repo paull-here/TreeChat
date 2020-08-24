@@ -163,6 +163,7 @@ class SignInActivity : AppCompatActivity() {
 //
 //    }
 
+    // TODO: Fix autologin and login staying as default in SharedPreferences
     fun loginClick (view: View) {
         // Get person's user/pass
         val user = username.text.toString()
@@ -205,21 +206,31 @@ class SignInActivity : AppCompatActivity() {
         val password = chatuser.password
         if (pass == password) {
             Log.d("PL3", "Current CHECK IS:" + checkBox.isChecked.toString())
+            val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
             if (checkBox.isChecked) {
-                val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
                 with (sharedPref.edit()) {
                     putString(currentUserKey, username)
                     putString(currentPassKey, password)
                     putString(autoLoginCheck, "true")
                     apply()
                 }
-                WelcomeActivity.username = username
-                WelcomeActivity.password = password
-                WelcomeActivity.signedInAndChecked = true
                 val current_user = sharedPref.getString(currentUserKey, "default")
                 val current_pass = sharedPref.getString(currentPassKey, "default")
                 Log.d("PL2", "CURRENT USER IS: " + current_user.toString())
                 Log.d("PL2", "CURRENT PASS IS: " + current_pass.toString())
+            } else {
+                Log.d("PL25", "reached sharedPrefEdit")
+                with (sharedPref.edit()) {
+                    putString(currentUserKey, username)
+                    putString(currentPassKey, password)
+                    putString(autoLoginCheck, "false")
+                    apply()
+                    Log.d("PL26", "sharedPrefEdit done")
+                }
+                val current_user = sharedPref.getString(currentUserKey, "default")
+                val current_pass = sharedPref.getString(currentPassKey, "default")
+                Log.d("PL27", "CURRENT USER IS: " + current_user.toString())
+                Log.d("PL27", "CURRENT PASS IS: " + current_pass.toString())
             }
 
             val myIntent = Intent(this, ChannelListActivity::class.java)

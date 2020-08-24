@@ -50,7 +50,7 @@ class ChannelListActivity : AppCompatActivity() {
         }
         
         listofchannels.setOnItemClickListener{ _,_,index,_ ->
-            //TODO: Figure out how to go from an onclicklistener by index to starting channel
+            //TODO: Figure out how to go from an onclicklistener by index to starting channel (DONE)
             Log.d("toChannel1", "Clicked channel from channel list, moving to ChannelActivity")
             fb.child("/channel/${channelList[index]}/members")
                 .addListenerForSingleValueEvent(object: ValueEventListener {
@@ -67,7 +67,7 @@ class ChannelListActivity : AppCompatActivity() {
                             fb.child("/channel/${channelList[index]}/members/$newMemberKey")
                                 .setValue(current_user)
 
-                            // TODO: implement adding channel registration to user properties in user node
+                            // TODO: implement adding channel registration to user properties in user node (DONE)
                             fb.child("user/$current_user/channels/${channelList[index]}")
                                 .setValue(newMemberKey)
                         }
@@ -83,7 +83,7 @@ class ChannelListActivity : AppCompatActivity() {
             Log.d("toChannel2", "Clicked channel from channel list, moving to ChannelActivity")
         }
 
-        // TODO: Fix bug where extra key/value pairs are being made for the same user
+        // TODO: Fix bug where extra key/value pairs are being made for the same user (DONE)
         val channeltree = fb.child("/channel")
         channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
@@ -124,6 +124,7 @@ class ChannelListActivity : AppCompatActivity() {
 
     // TODO: Fix bug where channels with no messages can't be deleted (DONE)
     // Just needed to add a case where if the data doesn't exist, then execute this instead
+    // TODO: Make it so that deleting a channel will remove it from each user node
     fun deleteChannel() {
         Log.d("channeltodelete", channelToDelete)
         val messageKeysToDelete = ArrayList<String>()
@@ -198,7 +199,7 @@ class ChannelListActivity : AppCompatActivity() {
         }
     }
 
-    // TODO: Implement deleting account, including removing user information from each channel (DONE)
+    // TODO: Implement deleting account, including removing user information from each channel
     fun deleteAccount() {
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         val currentUser = sharedPref.getString(currentUserKey, "default")
@@ -282,7 +283,17 @@ class ChannelListActivity : AppCompatActivity() {
         }
     }
 
-    // TODO: Bug where you can't logout anymore, SharedPreferences cannot be read
+    // TODO: Bug where you can't logout anymore, SharedPreferences cannot be read (DONE)
+    // Initially thought:
+    // Needed to put the persistencestateenabled above all other Firebase calls in onCreate in
+    // WelcomeActivity, and it was crashing because SharedPreferences was open and being modified
+    // when a new Intent was launched, due to shared preferences editing being asynchronous. Put the
+    // Intent inside the sharedPref.edit(). Removed FirebaseAuth.getInstance().signOut()
+
+    // Found out that:
+    // SetPersistenceEnabled is causing all of these problems where it is making the SharedPref
+    // crash, so created new class MyFirebaseApp that extends Application and setpersistencenabled
+    // there instead and linked it in the manifest
     fun logoutClick() {
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         with (sharedPref.edit()) {
@@ -292,7 +303,6 @@ class ChannelListActivity : AppCompatActivity() {
             remove(autoLoginCheck)
             val done = commit()
             Log.d("p15", "COMMIT IS: " + done.toString())
-
         }
         WelcomeActivity.username = ""
         WelcomeActivity.password = ""
@@ -302,8 +312,7 @@ class ChannelListActivity : AppCompatActivity() {
         Log.d("p12", "CURRENT PASS IS: " + WelcomeActivity.password)
 
         FirebaseAuth.getInstance().signOut()
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true)
-        val intent = Intent(this, WelcomeActivity::class.java)
+        val intent = Intent(this@ChannelListActivity, WelcomeActivity::class.java)
         startActivity(intent)
     }
 }
