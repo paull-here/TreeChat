@@ -48,11 +48,11 @@ class ChannelActivity : AppCompatActivity() {
         // Retrieve data in channel node
         val listOfChannels = fb.child("channel")
         Log.d("p3", "in child channel: " + listOfChannels.toString())
-        val channeltree = listOfChannels.orderByChild("name").equalTo(channelname)
+        val currchanneltree = listOfChannels.orderByChild("name").equalTo(channelname)
 
         // This event listener is meant to keep listening to query or database reference it is
         // attached to
-        channeltree.addValueEventListener(object : ValueEventListener {
+        currchanneltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 // do something with data
                 processData(data, channelname)
@@ -78,7 +78,7 @@ class ChannelActivity : AppCompatActivity() {
 
         description = channelinfo.description
 
-        // TODO: Retrieve member map
+        // TODO: Retrieve member map (DONE)
         val membersTree = fb.child("/channel/$channelname/members").orderByKey()
         membersTree.addListenerForSingleValueEvent( object: ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
@@ -106,7 +106,7 @@ class ChannelActivity : AppCompatActivity() {
             }
         })
 
-        // TODO: Scan for changes in messages tree under channel node
+        // TODO: Scan for changes in messages tree under channel node (DONE)
         val currChannelMsgIDs = ArrayList<String>()
         val messagesInCurrChannel = fb.child("/channel/$channelname/messages").orderByKey()
         messagesInCurrChannel.addListenerForSingleValueEvent(object: ValueEventListener{
@@ -119,7 +119,7 @@ class ChannelActivity : AppCompatActivity() {
             }
         })
 
-        //TODO: retrieve data from message section in tree, not in the same place as channelinfo
+        //TODO: retrieve data from message section in tree, not in the same place as channelinfo (DONE)
         // TODO: Fix bug where messagemap is not retrieving all the messages (DONE)
         // This bug was because of the persistence state saving old messages, added code to keep
         // all three main nodes of the Firebase database synchronized
