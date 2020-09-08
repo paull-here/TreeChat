@@ -111,8 +111,13 @@ class WelcomeActivity : AppCompatActivity() {
             return
         }
 
+        // TODO: Fix bug where can't auto-login anymore
+        // Found out that this was because the channels attribute under user node was not accounted
+        // for
         val data = arr.children.iterator().next()
         val chatuser = data.getValue(ChatUser::class.java)!!
+
+//        val chatuser =
 
         //        val hisName = data.child("name").value
         val hisName = chatuser.username

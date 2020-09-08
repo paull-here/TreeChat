@@ -1,39 +1,35 @@
 package com.example.treechat
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.util.Log
 import com.example.treechat.WelcomeActivity.Companion.currentPassKey
 import com.example.treechat.WelcomeActivity.Companion.currentUserKey
-import com.example.treechat.WelcomeActivity.Companion.password
-import com.example.treechat.WelcomeActivity.Companion.username
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.android.synthetic.main.activity_channel_list.*
-import kotlinx.android.synthetic.main.activity_sign_in.*
-import com.example.treechat.R
-import androidx.core.app.ComponentActivity
-import androidx.core.app.ComponentActivity.ExtraData
-import androidx.core.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
 import android.view.*
-import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import com.example.treechat.WelcomeActivity.Companion.autoLoginCheck
 import com.google.firebase.database.*
+import kotlinx.android.synthetic.main.activity_main.view.*
 
-class ChannelListActivity : AppCompatActivity() {
+class ChannelListActivity() : AppCompatActivity() {
 
-    lateinit var mAuth : FirebaseAuth
+    lateinit var mAuth: FirebaseAuth
     private var channelToDelete = ""
     private var channelList: MutableList<String> = ArrayList()
-    private lateinit var myAdapter : ArrayAdapter<String>
+    private lateinit var myAdapter: ArrayAdapter<String>
     private var fb = FirebaseDatabase.getInstance().reference
-    private var typeindicator2 = object : GenericTypeIndicator<HashMap<String, String>>(){}
+    private var typeindicator2 = object : GenericTypeIndicator<HashMap<String, String>>() {}
     private var current_user = ""
+    private var creatingChannel = false
+    private lateinit var channeltreelistener: ValueEventListener
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,19 +39,19 @@ class ChannelListActivity : AppCompatActivity() {
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
         current_user = sharedPref.getString(currentUserKey, "default")!!
 
-        listofchannels.setOnItemLongClickListener{_,_,index,_ ->
-            Log.d("Longclicklistener","Registered item long click")
+        listofchannels.setOnItemLongClickListener { _, _, index, _ ->
+            Log.d("Longclicklistener", "Registered item long click")
             channelToDelete = channelList[index]
             registerForContextMenu(listofchannels)
             false
         }
-        
-        listofchannels.setOnItemClickListener{ _,_,index,_ ->
+
+        listofchannels.setOnItemClickListener { context, _, index, _ ->
             //TODO: Figure out how to go from an onclicklistener by index to starting channel (DONE)
             //TODO: Fix bug where joining channel but channel not added to user's channels
             Log.d("toChannel1", "Clicked channel from channel list, moving to ChannelActivity")
             fb.child("/channel/${channelList[index]}/members")
-                .addListenerForSingleValueEvent(object: ValueEventListener {
+                .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(data: DataSnapshot) {
                         var memberInChannel = false
                         for (key in data.children) {
@@ -73,25 +69,32 @@ class ChannelListActivity : AppCompatActivity() {
                             fb.child("user/$current_user/channels/${channelList[index]}")
                                 .setValue(newMemberKey)
                         }
+
+                        val curr_context = context.context
+                        val myIntent = Intent(curr_context, ChannelActivity::class.java)
+                        myIntent.putExtra("chan_name", channelList[index])
+                        Log.d(
+                            "toChannel2",
+                            "Clicked channel from channel list, moving to ChannelActivity"
+                        )
+                        curr_context.startActivity(myIntent)
+                        finish()
                     }
 
                     override fun onCancelled(databaseError: DatabaseError) {
                         // report/log the error
                     }
                 })
-            val myIntent = Intent(this, ChannelActivity::class.java)
-            myIntent.putExtra("chan_name", channelList[index])
-            startActivity(myIntent)
-            Log.d("toChannel2", "Clicked channel from channel list, moving to ChannelActivity")
+
         }
 
         // TODO: Fix bug where extra key/value pairs are being made for the same user (DONE)
         // TODO: Fix bug where channelnameslistener and channellistlistener keep triggering
         val channeltree = fb.child("/channel")
-        channeltree.addValueEventListener(object : ValueEventListener {
+        channeltreelistener = channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
-                processChannelListData(data)
                 Log.d("channellistlistener", data.key + ": " + data.value)
+                processChannelListData(data)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -101,8 +104,104 @@ class ChannelListActivity : AppCompatActivity() {
         })
     }
 
+    fun processChannelListData(data: DataSnapshot) {
+//        if (creatingChannel) {
+//            return
+//        } else if (this@ChannelListActivity.isFinishing) {
+//            return
+//        }
+        val channelnames = data.children.toMutableList()
+        var channels = ArrayList<String>()
+        for (channel in channelnames) {
+            channels.add(channel.key.toString())
+        }
+        Log.d("channelnameslistener", channels.toString())
+        channelList = channels
+        setupList()
+    }
+
+    fun setupList() {
+//        if (this@ChannelListActivity.isFinishing) {
+//            return
+//        }
+        Log.d("SetupList", "SetupChannelList")
+        myAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, channelList)
+        listofchannels.adapter = myAdapter
+        myAdapter.notifyDataSetChanged()
+    }
+
+    // TODO: implement adding channel registration to user properties in user node (DONE)
+    // TODO: Bug where clicking on Add Channel with no text creates channels (DONE)
+    fun addChannel(view: View) {
+        val channelname = addChannelName.text.toString()
+        if (channelname == "") {
+            Toast.makeText(
+                this,
+                "Please enter a channel name.", Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        val channelMatchTree = fb.child("/channel").equalTo(channelname)
+
+        channelMatchTree.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(data: DataSnapshot) {
+                // do something with data
+                Log.d("p5", data.key + ": " + data.value)
+                processChannelMatch(data, channelname, view)
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                // report/log the error
+                Log.d("p6", "Data didn't arrive")
+            }
+        })
+
+        addChannelName.text.clear()
+    }
+
+    // TODO: Bug where creating a channel doesn't jump to next activity instead it goes back to list
+    fun processChannelMatch(data: DataSnapshot, channelname: String, view: View) {
+        if (!data.exists()) {
+            creatingChannel = true
+            val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
+            val currentUser = sharedPref.getString(currentUserKey, "default")
+            val memberkey = fb.child("/channel/$channelname/members").push().key.toString()
+            fb.child("/channel/$channelname/members/${memberkey}").setValue("$currentUser")
+            Log.d(
+                "memberkey-user",
+                fb.child("/channel/$channelname/members/${memberkey}").key.toString()
+            )
+            fb.child("/channel/$channelname/name").setValue(channelname)
+            Log.d("channel's name set", fb.child("/channel/$channelname/name").key.toString())
+            fb.child("user/$currentUser/channels/$channelname").setValue(memberkey)
+            Log.d("User's channel", "property updated")
+
+            channelList.add(channelname)
+            setupList()
+
+            val curr_context = view.context
+            val curr_intent = Intent(curr_context, ChannelActivity::class.java)
+            curr_intent.putExtra("chan_name", channelname)
+            curr_context.startActivity(curr_intent)
+
+//            val myIntent = Intent(this, ChannelActivity::class.java)
+//            myIntent.putExtra("chan_name", channelname)
+//            startActivity(myIntent)
+            creatingChannel = false
+            finish()
+
+        } else {
+            Toast.makeText(
+                this,
+                "Channel already exists. $channelname", Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+    }
+
     override fun onCreateContextMenu(
-        menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+        menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
         super.onCreateContextMenu(menu, v, menuInfo)
         Log.d("createcontextmenu", "Reached onCreateContextMenu")
         menuInflater.inflate(R.menu.deletechannel, menu)
@@ -132,11 +231,14 @@ class ChannelListActivity : AppCompatActivity() {
         Log.d("channeltodelete", channelToDelete)
         val messageKeysToDelete = ArrayList<String>()
         fb.child("/channel/$channelToDelete/messages")
-            .addListenerForSingleValueEvent(object: ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(data: DataSnapshot) {
                     if (!data.exists()) {
                         deleteChannelHelper(channelToDelete)
-                        Log.d("deletedchannel1", "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}")
+                        Log.d(
+                            "deletedchannel1",
+                            "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}"
+                        )
                         fb.child("/channel/$channelToDelete").removeValue()
                         return
                     }
@@ -155,7 +257,10 @@ class ChannelListActivity : AppCompatActivity() {
 
                     deleteChannelHelper(channelToDelete)
 
-                    Log.d("deletedchannel1", "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}")
+                    Log.d(
+                        "deletedchannel1",
+                        "deletedchannel ${fb.child("/channel/$channelToDelete").key.toString()}"
+                    )
                     fb.child("/channel/$channelToDelete").removeValue()
                 }
 
@@ -166,18 +271,21 @@ class ChannelListActivity : AppCompatActivity() {
     }
 
     fun deleteChannelHelper(channelname: String) {
-        fb.child("user").addListenerForSingleValueEvent(object: ValueEventListener {
+        fb.child("user").addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 for (user in data.children) {
                     val userChannelsMap = user.child("channels")
                     if (!userChannelsMap.exists()) {
                         continue
                     } else if (userChannelsMap.hasChild(channelname) &&
-                        userChannelsMap.child(channelname).exists()) {
-                            Log.d("removingchannelfromuser", "${user.key.toString()}: " +
-                                    fb.child("user/${user.key}/channels/$channelname").key.toString())
+                        userChannelsMap.child(channelname).exists()
+                    ) {
+                        Log.d(
+                            "removingchannelfromuser", "${user.key.toString()}: " +
+                                    fb.child("user/${user.key}/channels/$channelname").key.toString()
+                        )
                         // Uncomment when actually removing
-                            fb.child("user/${user.key}/channels/$channelname").removeValue()
+                        fb.child("user/${user.key}/channels/$channelname").removeValue()
                     }
                 }
 
@@ -189,23 +297,6 @@ class ChannelListActivity : AppCompatActivity() {
         }
 
         )
-    }
-
-    fun processChannelListData(data: DataSnapshot) {
-        val channelnames = data.children.toMutableList()
-        var channels = ArrayList<String>()
-        for (channel in channelnames) {
-            channels.add(channel.key.toString())
-        }
-        Log.d("channelnameslistener", channels.toString())
-        channelList = channels
-        setupList()
-    }
-
-    fun setupList() {
-        myAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, channelList)
-        listofchannels.adapter = myAdapter
-        myAdapter.notifyDataSetChanged()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -238,7 +329,7 @@ class ChannelListActivity : AppCompatActivity() {
         Log.d("accountToDelete", currentUserKey)
         val memberKeysToDelete = ArrayList<ArrayList<String>>()
         fb.child("/user/$currentUser/channels")
-            .addListenerForSingleValueEvent(object: ValueEventListener {
+            .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(data: DataSnapshot) {
                     if (!data.exists()) {
                         return
@@ -254,14 +345,20 @@ class ChannelListActivity : AppCompatActivity() {
                     Log.d("memberKeysToDelete", memberKeysToDelete.toString())
 
                     for (keyValuePair in memberKeysToDelete) {
-                        Log.d("removingfromchannel", fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}").key.toString())
+                        Log.d(
+                            "removingfromchannel",
+                            fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}").key.toString()
+                        )
                         // Uncomment when actually deleting
                         fb.child("channel/${keyValuePair[0]}/members/${keyValuePair[1]}")
                             .removeValue()
                         Log.d("deletedchannel", "deletedfrom: ${keyValuePair[0]}")
                     }
 
-                    Log.d("deleteduser", "deleteduser ${fb.child("/user/$currentUser").key.toString()}")
+                    Log.d(
+                        "deleteduser",
+                        "deleteduser ${fb.child("/user/$currentUser").key.toString()}"
+                    )
                     // Uncomment when actually deleting
                     fb.child("/user/$currentUser").removeValue()
                     logoutClick()
@@ -273,54 +370,6 @@ class ChannelListActivity : AppCompatActivity() {
             })
     }
 
-    // TODO: implement adding channel registration to user properties in user node (DONE)
-    // TODO: Bug where clicking on Add Channel with no text creates channels
-    fun addChannel (view: View) {
-        val channelname = addChannelName.text.toString()
-        if (channelname == "") {
-            Toast.makeText(this,
-                "Please enter a channel name.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val channelMatchTree = fb.child("/channel").equalTo(channelname)
-
-        channelMatchTree.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(data: DataSnapshot) {
-                // do something with data
-                processChannelMatch(data, channelname)
-                Log.d("p5", data.key + ": " + data.value)
-            }
-
-            override fun onCancelled(databaseError: DatabaseError) {
-                // report/log the error
-                Log.d("p6", "Data didn't arrive")
-            }
-        })
-
-        addChannelName.text.clear()
-    }
-
-    // TODO: Bug where creating a channel doesn't jump to next activity instead it goes back to list
-    fun processChannelMatch (data: DataSnapshot, channelname: String) {
-        if (!data.exists()) {
-            val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
-            val currentUser = sharedPref.getString(currentUserKey, "default")
-            val memberkey = fb.child("/channel/$channelname/members").push().key.toString()
-            fb.child("/channel/$channelname/members/${memberkey}").setValue("$currentUser")
-            fb.child("/channel/$channelname/name").setValue(channelname)
-            fb.child("user/$currentUser/channels/$channelname")
-                .setValue(memberkey)
-
-            channelList.add(channelname)
-            val myIntent = Intent(this@ChannelListActivity, ChannelActivity::class.java)
-            myIntent.putExtra("chan_name", channelname)
-            startActivity(myIntent)
-        } else {
-            Toast.makeText(this,
-                "Channel already exists. $channelname", Toast.LENGTH_SHORT).show()
-            return
-        }
-    }
 
     // TODO: Bug where you can't logout anymore, SharedPreferences cannot be read (DONE)
     // Initially thought:
@@ -335,7 +384,7 @@ class ChannelListActivity : AppCompatActivity() {
     // there instead and linked it in the manifest
     fun logoutClick() {
         val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE) ?: return
-        with (sharedPref.edit()) {
+        with(sharedPref.edit()) {
             clear()
             remove(currentUserKey)
             remove(currentPassKey)
@@ -353,6 +402,38 @@ class ChannelListActivity : AppCompatActivity() {
         FirebaseAuth.getInstance().signOut()
         val intent = Intent(this@ChannelListActivity, WelcomeActivity::class.java)
         startActivity(intent)
+//        finish()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        fb.child("channel").removeEventListener(channeltreelistener)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        fb.child("channel").removeEventListener(channeltreelistener)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        fb.child("channel").removeEventListener(channeltreelistener)
     }
 }
+
+
+
+
+//    override fun onPause() {
+//        super.onPause()
+//        fb.child("channel").removeValueEventListener(channeltreelistener)
+//        finish()
+//    }
+//
+//    override fun onStop() {
+//        super.onStop()
+//        fb.child("channel").removeEventListener(channeltreelistener)
+//        finish()
+//    }
+//}
 

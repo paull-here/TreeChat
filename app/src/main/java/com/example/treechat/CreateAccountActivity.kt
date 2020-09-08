@@ -67,23 +67,38 @@ class CreateAccountActivity : AppCompatActivity() {
         }
     }
 
-    fun createAccount(user: String, pass: String, email: String, name: String) {
+    fun createAccount(username: String, password: String, email: String, name: String) {
         val fbr = FirebaseDatabase.getInstance().reference
         val allusers = fbr.child("user")
-        val newuser = allusers.child(user)
+        val newuser = allusers.child(username)
+        val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
         newuser.child("email").setValue(email)
         newuser.child("name").setValue(name)
-        newuser.child("username").setValue(user)
-        newuser.child("password").setValue(pass)
+        newuser.child("username").setValue(username)
+        newuser.child("password").setValue(password)
 
         if (checkBox.isChecked) {
-            val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
             with(sharedPref.edit()) {
-                putString(WelcomeActivity.currentUserKey, user)
-                putString(WelcomeActivity.currentPassKey, pass)
+                putString(WelcomeActivity.currentUserKey, username)
+                putString(WelcomeActivity.currentPassKey, password)
+                putString(WelcomeActivity.autoLoginCheck, "true")
                 apply()
             }
+        } else {
+            Log.d("PL25", "reached sharedPrefEdit")
+            with(sharedPref.edit()) {
+                putString(WelcomeActivity.currentUserKey, username)
+                putString(WelcomeActivity.currentPassKey, password)
+                putString(WelcomeActivity.autoLoginCheck, "false")
+                apply()
+                Log.d("PL26", "sharedPrefEdit done")
+            }
+            val current_user = sharedPref.getString(WelcomeActivity.currentUserKey, "default")
+            val current_pass = sharedPref.getString(WelcomeActivity.currentPassKey, "default")
+            Log.d("PL27", "CURRENT USER IS: " + current_user.toString())
+            Log.d("PL27", "CURRENT PASS IS: " + current_pass.toString())
         }
+
         val myIntent = Intent(this, ChannelListActivity::class.java)
         startActivity(myIntent)
     }

@@ -1,9 +1,9 @@
 package com.example.treechat
 
 data class ChatUser (
+    var channels: HashMap<String, String> = HashMap<String, String>(),
     var email: String ="",
-    var id: Int = 0,
     var name: String = "",
-    var username: String = "",
-    var password: String = ""
+    var password: String = "",
+    var username: String = ""
 )
