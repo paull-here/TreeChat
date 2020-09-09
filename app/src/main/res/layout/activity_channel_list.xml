@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -30,7 +31,7 @@
         android:layout_height="40sp"
         android:id="@+id/addChannelButton"
         android:text="Add Channel"
-        android:onClick="addChannel"
+        android:onClick="onAddChannel"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginRight="10sp"
         android:layout_marginLeft="10sp"

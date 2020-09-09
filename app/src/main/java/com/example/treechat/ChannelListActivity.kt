@@ -1,5 +1,6 @@
 package com.example.treechat
 
+import android.app.Application
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -18,6 +19,7 @@ import android.widget.Toast
 import com.example.treechat.WelcomeActivity.Companion.autoLoginCheck
 import com.google.firebase.database.*
 import kotlinx.android.synthetic.main.activity_main.view.*
+import kotlinx.coroutines.*
 
 class ChannelListActivity() : AppCompatActivity() {
 
@@ -30,6 +32,10 @@ class ChannelListActivity() : AppCompatActivity() {
     private var current_user = ""
     private var creatingChannel = false
     private lateinit var channeltreelistener: ValueEventListener
+
+    // Coroutines
+    private var ChannelListActivityJob = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + ChannelListActivityJob)
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -53,32 +59,9 @@ class ChannelListActivity() : AppCompatActivity() {
             fb.child("/channel/${channelList[index]}/members")
                 .addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(data: DataSnapshot) {
-                        var memberInChannel = false
-                        for (key in data.children) {
-                            if (key.value == current_user) {
-                                memberInChannel = true
-                            }
+                        uiScope.launch {
+                            toChannelClick(data, index)
                         }
-                        if (!memberInChannel) {
-                            val newMemberKey = fb.child("/channel/${channelList[index]}/members")
-                                .push().key.toString()
-                            fb.child("/channel/${channelList[index]}/members/$newMemberKey")
-                                .setValue(current_user)
-
-                            // TODO: implement adding channel registration to user properties in user node (DONE)
-                            fb.child("user/$current_user/channels/${channelList[index]}")
-                                .setValue(newMemberKey)
-                        }
-
-                        val curr_context = context.context
-                        val myIntent = Intent(curr_context, ChannelActivity::class.java)
-                        myIntent.putExtra("chan_name", channelList[index])
-                        Log.d(
-                            "toChannel2",
-                            "Clicked channel from channel list, moving to ChannelActivity"
-                        )
-                        curr_context.startActivity(myIntent)
-                        finish()
                     }
 
                     override fun onCancelled(databaseError: DatabaseError) {
@@ -93,8 +76,9 @@ class ChannelListActivity() : AppCompatActivity() {
         val channeltree = fb.child("/channel")
         channeltreelistener = channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
-                Log.d("channellistlistener", data.key + ": " + data.value)
-                processChannelListData(data)
+                uiScope.launch {
+                    toChannelListChange(data)
+                }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -104,12 +88,23 @@ class ChannelListActivity() : AppCompatActivity() {
         })
     }
 
+    suspend fun toChannelListChange(data: DataSnapshot) {
+        withContext(Dispatchers.IO) {
+            processChannelListData(data)
+
+            withContext(Dispatchers.Main){
+                setupList()
+            }
+        }
+    }
+
     fun processChannelListData(data: DataSnapshot) {
 //        if (creatingChannel) {
 //            return
 //        } else if (this@ChannelListActivity.isFinishing) {
 //            return
 //        }
+        Log.d("channellistlistener", data.key + ": " + data.value)
         val channelnames = data.children.toMutableList()
         var channels = ArrayList<String>()
         for (channel in channelnames) {
@@ -117,7 +112,41 @@ class ChannelListActivity() : AppCompatActivity() {
         }
         Log.d("channelnameslistener", channels.toString())
         channelList = channels
-        setupList()
+    }
+
+    suspend fun toChannelClick(data: DataSnapshot, index: Int) {
+        withContext(Dispatchers.IO) {
+            channelClick(data, index)
+        }
+    }
+
+    fun channelClick(data: DataSnapshot,  index: Int){
+        var memberInChannel = false
+        for (key in data.children) {
+            if (key.value == current_user) {
+                memberInChannel = true
+            }
+        }
+        if (!memberInChannel) {
+            val newMemberKey = fb.child("/channel/${channelList[index]}/members")
+                .push().key.toString()
+            fb.child("/channel/${channelList[index]}/members/$newMemberKey")
+                .setValue(current_user)
+
+            // TODO: implement adding channel registration to user properties in user node (DONE)
+            fb.child("user/$current_user/channels/${channelList[index]}")
+                .setValue(newMemberKey)
+        }
+
+        val myIntent = Intent(this@ChannelListActivity, ChannelActivity::class.java)
+        myIntent.putExtra("chan_name", channelList[index])
+        Log.d(
+        "toChannel2",
+        "Clicked channel from channel list, moving to ChannelActivity"
+        )
+//        myIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(myIntent)
+        finish()
     }
 
     fun setupList() {
@@ -132,7 +161,21 @@ class ChannelListActivity() : AppCompatActivity() {
 
     // TODO: implement adding channel registration to user properties in user node (DONE)
     // TODO: Bug where clicking on Add Channel with no text creates channels (DONE)
-    fun addChannel(view: View) {
+    fun onAddChannel(view: View) {
+        uiScope.launch {
+            addChannel()
+        }
+
+
+    }
+
+    suspend fun addChannel() {
+        withContext(Dispatchers.IO) {
+            channelMatch()
+        }
+    }
+
+    fun channelMatch() {
         val channelname = addChannelName.text.toString()
         if (channelname == "") {
             Toast.makeText(
@@ -147,7 +190,7 @@ class ChannelListActivity() : AppCompatActivity() {
             override fun onDataChange(data: DataSnapshot) {
                 // do something with data
                 Log.d("p5", data.key + ": " + data.value)
-                processChannelMatch(data, channelname, view)
+                processChannelMatch(data, channelname)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -160,7 +203,7 @@ class ChannelListActivity() : AppCompatActivity() {
     }
 
     // TODO: Bug where creating a channel doesn't jump to next activity instead it goes back to list
-    fun processChannelMatch(data: DataSnapshot, channelname: String, view: View) {
+    fun processChannelMatch(data: DataSnapshot, channelname: String) {
         if (!data.exists()) {
             creatingChannel = true
             val sharedPref = getSharedPreferences("test", Context.MODE_PRIVATE)
@@ -179,14 +222,15 @@ class ChannelListActivity() : AppCompatActivity() {
             channelList.add(channelname)
             setupList()
 
-            val curr_context = view.context
-            val curr_intent = Intent(curr_context, ChannelActivity::class.java)
-            curr_intent.putExtra("chan_name", channelname)
-            curr_context.startActivity(curr_intent)
+//            val curr_context = view.context
+//            val curr_intent = Intent(curr_context, ChannelActivity::class.java)
+//            curr_intent.putExtra("chan_name", channelname)
+//            curr_context.startActivity(curr_intent)
 
-//            val myIntent = Intent(this, ChannelActivity::class.java)
-//            myIntent.putExtra("chan_name", channelname)
-//            startActivity(myIntent)
+            val myIntent = Intent(this@ChannelListActivity, ChannelActivity::class.java)
+            myIntent.putExtra("chan_name", channelname)
+//            myIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(myIntent)
             creatingChannel = false
             finish()
 
@@ -408,16 +452,19 @@ class ChannelListActivity() : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         fb.child("channel").removeEventListener(channeltreelistener)
+        ChannelListActivityJob.cancel()
     }
 
     override fun onStop() {
         super.onStop()
         fb.child("channel").removeEventListener(channeltreelistener)
+        ChannelListActivityJob.cancel()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         fb.child("channel").removeEventListener(channeltreelistener)
+        ChannelListActivityJob.cancel()
     }
 }
 

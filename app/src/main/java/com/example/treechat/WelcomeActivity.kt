@@ -37,13 +37,15 @@ class WelcomeActivity : AppCompatActivity() {
 //            database.setPersistenceEnabled(true)
 //            mDatabase = database.reference
 //        }
-        FirebaseApp.initializeApp(this)
-        val messageSync = FirebaseDatabase.getInstance().getReference("message")
-        messageSync.keepSynced(true)
-        val channelSync = FirebaseDatabase.getInstance().getReference("channel")
-        channelSync.keepSynced(true)
-        val userSync = FirebaseDatabase.getInstance().getReference("user")
-        userSync.keepSynced(true)
+
+
+//        FirebaseApp.initializeApp(this)
+//        val messageSync = FirebaseDatabase.getInstance().getReference("message")
+//        messageSync.keepSynced(false)
+//        val channelSync = FirebaseDatabase.getInstance().getReference("channel")
+//        channelSync.keepSynced(false)
+//        val userSync = FirebaseDatabase.getInstance().getReference("user")
+//        userSync.keepSynced(false)
 
 
 

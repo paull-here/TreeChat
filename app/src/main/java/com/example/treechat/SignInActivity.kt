@@ -173,18 +173,18 @@ class SignInActivity : AppCompatActivity() {
         val fb = FirebaseDatabase.getInstance().reference
         val users = fb.child("user")
         val userstree = users.orderByChild("username").equalTo(user)
-        Log.d("pl", userstree.toString())
+        Log.d("pl456", userstree.toString())
 
         userstree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 // do something with data
+                Log.d("pl123", data.key + ": " + data.value)
                 processData(user, pass, data)
-                Log.d("pl1", data.key + ": " + data.value)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
                 // report/log the error
-                Log.d("pl3", "Data didn't arrive")
+                Log.d("pl321", "Data didn't arrive")
             }
         })
     }
