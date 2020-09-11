@@ -54,25 +54,36 @@ class ChannelListActivity() : AppCompatActivity() {
 
         listofchannels.setOnItemClickListener { context, _, index, _ ->
             //TODO: Figure out how to go from an onclicklistener by index to starting channel (DONE)
-            //TODO: Fix bug where joining channel but channel not added to user's channels
+            //TODO: Fix bug where joining channel but channel not added to user's channels (DONE)
             Log.d("toChannel1", "Clicked channel from channel list, moving to ChannelActivity")
-            fb.child("/channel/${channelList[index]}/members")
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(data: DataSnapshot) {
-                        uiScope.launch {
-                            toChannelClick(data, index)
-                        }
-                    }
 
-                    override fun onCancelled(databaseError: DatabaseError) {
-                        // report/log the error
-                    }
-                })
+            val myIntent = Intent(this, ChannelActivity::class.java)
+            myIntent.putExtra("chan_name", channelList[index])
+            startActivity(myIntent)
+            Log.d("toChannel2", "Clicked channel from channel list, moving to ChannelActivity")
+
+            // TODO: Fix app crashing bug
+            // Taking out as it was not in the old working code
+            // The purpose of this code is to figure out if the user is in the channel's member list
+//            fb.child("/channel/${channelList[index]}/members")
+//                .addListenerForSingleValueEvent(object : ValueEventListener {
+//                    override fun onDataChange(data: DataSnapshot) {
+//                        uiScope.launch {
+//                            toChannelClick(data, index)
+//                        }
+//                    }
+//
+//                    override fun onCancelled(databaseError: DatabaseError) {
+//                        // report/log the error
+//                    }
+//                })
 
         }
 
         // TODO: Fix bug where extra key/value pairs are being made for the same user (DONE)
         // TODO: Fix bug where channelnameslistener and channellistlistener keep triggering
+        // Note: The channelnameslistener repeating was not the source of the issue, the app
+        // functioned fine, it stopped repeating after 4 repeats
         val channeltree = fb.child("/channel")
         channeltreelistener = channeltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
@@ -216,23 +227,33 @@ class ChannelListActivity() : AppCompatActivity() {
             )
             fb.child("/channel/$channelname/name").setValue(channelname)
             Log.d("channel's name set", fb.child("/channel/$channelname/name").key.toString())
-            fb.child("user/$currentUser/channels/$channelname").setValue(memberkey)
-            Log.d("User's channel", "property updated")
+            // TODO: Fix app crashing bug
+            // Taking out as it was not in the old working code
+//            fb.child("user/$currentUser/channels/$channelname").setValue(memberkey)
+//            Log.d("User's channel", "property updated")
 
             channelList.add(channelname)
-            setupList()
+            // TODO: Fix app crashing bug
+            // Taking out as it was not in the old working code
+//            setupList()
 
+            // TODO: Worth keeping this code here to show how to call startActivity with view
+            //  context (DONE)
 //            val curr_context = view.context
 //            val curr_intent = Intent(curr_context, ChannelActivity::class.java)
 //            curr_intent.putExtra("chan_name", channelname)
 //            curr_context.startActivity(curr_intent)
 
-            val myIntent = Intent(this@ChannelListActivity, ChannelActivity::class.java)
+            // Tried without this@ChannelListActivity
+            val myIntent = Intent(this, ChannelActivity::class.java)
             myIntent.putExtra("chan_name", channelname)
 //            myIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK.or(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(myIntent)
-            creatingChannel = false
-            finish()
+
+            // TODO: Fix app crashing bug
+            // Taking out as it was not in the old working code
+//            creatingChannel = false
+//            finish()
 
         } else {
             Toast.makeText(
