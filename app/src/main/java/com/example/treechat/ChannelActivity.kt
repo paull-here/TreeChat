@@ -55,8 +55,8 @@ class ChannelActivity : AppCompatActivity() {
         currchanneltree.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(data: DataSnapshot) {
                 // do something with data
-                processData(data, channelname)
                 Log.d("p5 currchanneltree", data.key + ": " + data.value)
+                processData(data, channelname)
             }
 
             override fun onCancelled(databaseError: DatabaseError) {

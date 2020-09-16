@@ -6,8 +6,10 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 // This will allow this class to be sorted according to one of it's attributes
-class Message (val key: String, val from: String, val msgtext: String, val timestamp: ZonedDateTime)
-    : Comparable<Message>
+data class Message (val key: String,
+                    val from: String,
+                    val msgtext: String,
+                    val timestamp: ZonedDateTime) : Comparable<Message>
 {
     @RequiresApi(Build.VERSION_CODES.O)
     private var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss a zzz")

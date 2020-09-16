@@ -17,7 +17,7 @@ class WelcomeActivity : AppCompatActivity() {
         const val currentUserKey = "current_user"
         const val currentPassKey = "current_pass"
         const val autoLoginCheck = "autoLoginCheck"
-        private lateinit var mDatabase: DatabaseReference
+        var fb = FirebaseDatabase.getInstance().reference
         var username = ""
         var password = ""
         var signedInAndChecked = false
