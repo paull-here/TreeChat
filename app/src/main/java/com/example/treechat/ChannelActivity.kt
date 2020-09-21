@@ -90,54 +90,11 @@ class ChannelActivity : AppCompatActivity() {
         Log.d("members", members.toString())
         setupMembers()
 
-        // TODO: This listener will be replaced by Channel data class retrieval (DONE)
-        // TODO: Retrieve member map (DONE)
-//        val membersTree = fb.child("/channel/$channelname/members").orderByKey()
-//        membersTree.addListenerForSingleValueEvent( object: ValueEventListener {
-//            override fun onDataChange(data: DataSnapshot) {
-//                val membersMap =
-//                    data.getValue(object : GenericTypeIndicator<HashMap<String, String>>() {})!!
-//                for (key in membersMap) {
-//                    if (key.value !in members) {
-//                        members.add(key.value)
-//                    }
-//                }
-//                // Version where temp list replaces entire member's arraylist
-////                var tempMembers = ArrayList<String>()
-////                for (key in membersMap) {
-////                    if (key.value !in members) {
-////                        tempMembers.add(key.value)
-////                    }
-////                }
-////                members = tempMembers
-//                Log.d("members", members.toString())
-//                setupMembers()
-//            }
-//
-//            override fun onCancelled(databaseError: DatabaseError) {
-//                // report/log the error
-//            }
-//        })
-
-
         val currChannelMsgIDs = ArrayList<String>()
         val messagesmap = channelinfo.messages
         for (key in messagesmap) {
             currChannelMsgIDs.add(key.key)
         }
-
-        // TODO: Listener for getMessageIDs will be replaced by Channel data class retrieval (DONE)
-        // TODO: Scan for changes in messages tree under channel node (DONE)
-//        val messagesInCurrChannel = fb.child("/channel/$channelname/messages").orderByKey()
-//        messagesInCurrChannel.addListenerForSingleValueEvent(object: ValueEventListener{
-//            override fun onDataChange(data: DataSnapshot) {
-//                getMessageIDs(data, currChannelMsgIDs)
-//            }
-//
-//            override fun onCancelled(databaseError: DatabaseError) {
-//                // report/log the error
-//            }
-//        })
 
         //TODO: retrieve data from message section in tree, not in the same place as channelinfo (DONE)
         // TODO: Fix bug where messagemap is not retrieving all the messages (DONE)
@@ -155,17 +112,6 @@ class ChannelActivity : AppCompatActivity() {
             }
         })
     }
-
-    // TODO: Listener for getMessageIDs will be replaced by Channel data class retrieval (DONE)
-//    fun getMessageIDs(data: DataSnapshot, currChannelMsgIDs: ArrayList<String>): ArrayList<String> {
-//        if (data.exists()) {
-//            val currChannelMsgMap = data.getValue(typeindicator2)!!
-//            for (key in currChannelMsgMap) {
-//                currChannelMsgIDs.add(key.key)
-//            }
-//        }
-//        return currChannelMsgIDs
-//    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun setupMessages(data: DataSnapshot, currChannelMsgIDs: MutableList<String>) {

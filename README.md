@@ -2,6 +2,8 @@
 
 This is a messaging app that students can use to login to their account, join channels and send messages with. This project features account login, account auto-login, account logout, account deletion, channel list selection, channel members, adding channel messages, and channel deletion.
 
+This project has used ValueEventListeners with methods to query Firebase database, updating multiple children at once using maps in a Firebase database, data classes with methods to update the database, ConstraintLayout, Intents, Inflatable Menus, Companion objects, global variables, SharedPreferences, ZonedDateTime parsing and Kotlin Coroutines.
+
 ### This is the welcome page:
 ![This is the welcome page](figures/WelcomeActivity.png)
 

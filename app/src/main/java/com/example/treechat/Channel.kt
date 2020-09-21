@@ -21,44 +21,9 @@ data class Channel (
         )
     }
 
-//    fun updateUserChannel(currentUser: String, channelname: String, memberkey: String) {
-//
-//        val userchannelmap = mapOf(channelname to memberkey)
-//
-//        val childUpdates = hashMapOf<String, Any>(
-//            "/user/$currentUser/channels" to userchannelmap
-//        )
-//
-//        fb.updateChildren(childUpdates)
-//    }
-
     fun makeNewChannel(currentUser: String, channelname: String) {
         val memberkey = fb.child("/channel/$channelname/members").push().key.toString()
         val channelkey = fb.child("/channel/$channelname/key").push().key.toString()
-        // Trying different way of updating children
-//        val channelmembermap = mapOf(memberkey to currentUser)
-////            val channelnamemap = mapOf("name" to channelname)
-//        val channelmap = mapOf("members" to channelmembermap, "name" to channelname)
-//        val userchannelmap = mapOf(channelname to memberkey)
-//
-//        val childUpdates = hashMapOf<String, Any>(
-////                "/channel/$channelname/members" to channelmembermap,
-//            "/channel/$channelname" to channelmap,
-////                "/user/$currentUser/channels" to userchannelmap
-//        )
-//
-//        fb.updateChildren(childUpdates)
-
-        // Trying to update with channellist node now
-//        val updateChannel = HashMap<String, Any?>()
-//        updateChannel["/channel/$channelname/members/$memberkey"] = currentUser
-//        updateChannel["/channel/$channelname/name"] = channelname
-
-//        val updateUser = HashMap<String, Any?>()
-//        updateUser["/user/$currentUser/channels/$channelname"] = memberkey
-//
-//        fb.updateChildren(updateUser)
-//        fb.updateChildren(updateChannel)
 
         val updateChannel = HashMap<String, Any?>()
         updateChannel["/channel/$channelname/key/$channelkey"] = channelname
@@ -75,22 +40,12 @@ data class Channel (
 
         Thread.sleep(500)
 
-        // TODO: Needed to take out channel registration to user node as it was crashing the app
-        // Version omitting just the user node which stops the crashing
-//        val updateUser = HashMap<String, Any?>()
-//        updateUser["/user/$currentUser/channels/$channelname"] = memberkey
-//        fb.updateChildren(updateUser)
 
         Log.d(
             "memberkey-user",
             fb.child("/channel/$channelname/members/${memberkey}").key.toString()
         )
         Log.d("channel's name set", fb.child("/channel/$channelname/name").key.toString())
-        
-//        // TODO: Fix app crashing bug
-//        // Taking out as it was not in the old working code
-//        fb.child("user/$currentUser/channels/$channelname").setValue(memberkey)
-//        Log.d("User's channel", "property updated")
 
     }
 }
