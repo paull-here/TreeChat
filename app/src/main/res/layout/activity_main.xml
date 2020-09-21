@@ -41,24 +41,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Create Account"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/login"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/signin"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginBottom="50sp"
         android:layout_marginLeft="10sp"
         android:onClick="createAccount"/>
 
     <Button
-        android:id="@+id/login"
+        android:id="@+id/signin"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sign In"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintLeft_toRightOf="@+id/create"
-        android:layout_marginBottom="50sp"
-        android:layout_marginLeft="20sp"
         android:layout_marginRight="10sp"
+        android:layout_marginBottom="50sp"
+        android:text="Sign In"
+        app:layout_constraintStart_toEndOf="@id/create"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:onClick="signIn"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
