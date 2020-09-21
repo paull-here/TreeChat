@@ -64,7 +64,6 @@ data class Channel (
         updateChannel["/channel/$channelname/key/$channelkey"] = channelname
         updateChannel["/channel/$channelname/members/$memberkey"] = currentUser
         updateChannel["/channel/$channelname/name"] = channelname
-        updateChannel["/user/$currentUser/channels/$channelname"] = memberkey
         updateChannel["/channellist/$channelname"] = channelkey
         fb.updateChildren(updateChannel).addOnCompleteListener { task ->
             if (task.isSuccessful) {
@@ -74,9 +73,12 @@ data class Channel (
             }
         }
 
+        Thread.sleep(500)
+
+        // TODO: Needed to take out channel registration to user node as it was crashing the app
         // Version omitting just the user node which stops the crashing
 //        val updateUser = HashMap<String, Any?>()
-//        updateUser.put("/user/$currentUser/channels/$channelname", memberkey)
+//        updateUser["/user/$currentUser/channels/$channelname"] = memberkey
 //        fb.updateChildren(updateUser)
 
         Log.d(
